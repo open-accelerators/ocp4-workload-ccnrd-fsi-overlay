@@ -1,4 +1,8 @@
-= ocp4-workload-ccnrd-fsi-overlay - Reconfigure CCNR Hands-On Lab for the Beyond 2020 FSI Workshop
+= ocp4-workload-ccnrd-fsi-overlay
+
+This role is an extension module for the AgnosticD framework to reconfigure *CCNR Hands-On Lab for the Beyond 2020 FSI Workshop*.
+
+Move this folder into the `agnosticd/ansible/roles/` path where you checked out repository https://github.com/redhat-cop/agnosticd.
 
 == Role overview
 
