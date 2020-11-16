@@ -1,0 +1,22 @@
+---
+become_override: no
+ocp_username: opentlc-mgr
+silent: False
+
+num_users: 15
+module_type: m1
+
+#
+# All modules. Do NOT use a comma (,) in the titles or paths!
+#
+module_titles:
+  - { name: m1, title: "Hybrid Cloud", path: /workshop/cloudnative/lab/workshop-environment }
+  - { name: m3, title: "Cloud-Native Development", path: /workshop/cloudnative/lab/workshop-environment }
+
+gogs_pwd: 'r3dh4t1!'
+
+workshop_openshift_user_name: userXX
+workshop_openshift_user_password: 'r3dh4t1!'
+workshop_che_user_name: userXX
+workshop_che_user_password: 'r3dh4t1!'
+

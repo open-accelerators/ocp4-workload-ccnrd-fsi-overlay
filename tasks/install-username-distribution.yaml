@@ -1,0 +1,52 @@
+---
+- name: url var
+  set_fact:
+    guides_urls: []
+
+- name: delete existing get-a-username app and route
+  shell: oc delete -n labs-infra svc/get-a-username dc/get-a-username
+
+- name: construct url argument for username distribution
+  set_fact:
+    guides_urls: "{{ guides_urls + ['http://guides-fsi-' + item.name + '-labs-infra.' + route_subdomain + item.path + '?userid=%USERNAME%;' + item.title ] if (item.name in modules) else guides_urls }}"
+  loop: "{{ module_titles }}"
+
+- name: deploy username distribution tool
+  shell: >
+    oc -n labs-infra new-app --as-deployment-config quay.io/openshiftlabs/username-distribution:1.4 --name=get-a-username
+    -e LAB_REDIS_HOST=redis
+    -e LAB_REDIS_PASS=redis
+    -e LAB_TITLE={{ 'Containers & Cloud Native Roadshow' | quote }}
+    -e LAB_DURATION_HOURS=1week
+    -e LAB_USER_COUNT={{ num_users }}
+    -e LAB_USER_ACCESS_TOKEN={{ workshop_openshift_user_password }}
+    -e LAB_USER_PASS={{ workshop_openshift_user_password }}
+    -e LAB_USER_PREFIX=user
+    -e LAB_USER_PAD_ZERO=false
+    -e LAB_ADMIN_PASS={{ workshop_openshift_user_password }}
+    -e LAB_MODULE_URLS={{ guides_urls | join(',') | quote }}
+    -e LAB_EXTRA_URLS={{ ( console_url + ';OpenShift Console,https://codeready-labs-infra.' + route_subdomain + ';CodeReady Workspaces Console' ) | quote }}
+
+- name: expose username distribution tool
+  k8s:
+    api_version: route.openshift.io/v1
+    namespace: labs-infra
+    state: present
+    kind: Route
+    definition:
+      metadata:
+        name: get-a-username
+        labels:
+          app: get-a-username
+      spec:
+        host: ''
+        to:
+          kind: Service
+          name: get-a-username
+          weight: 100
+        port:
+          targetPort: 8080-tcp
+        tls:
+          termination: edge
+          insecureEdgeTerminationPolicy: Allow
+  register: Route

@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  role_name: ocp4-workload-ccnrd-fsi-overlay
+  author: 
+    - FSI Verticals BU Team, Rafael Marins (rmarins@redhat.com)
+  description: |
+    Create the FSI Workshop Hand-on Experience Beyond 2020 (m1, m3) with OpenShift Service Mesh, 
+    RHAMT, CodeReady Workspaces, OpenShift 4.
+  license: MIT
+  min_ansible_version: 2.9
+  platforms: []
+  galaxy_tags:
+  - ccn
+  - devtrack
+  - workshop
+  - runtimes
+  - openshift
+dependencies: []

@@ -1,0 +1,76 @@
+---
+# Implement your Workload deployment tasks here
+
+- name: Setting up workload for user
+  debug:
+    msg: "Setting up workload for user ocp_username = {{ ocp_username }}"
+
+- name: Setting up num_users for workshop
+  debug:
+    msg: "Setting up num_users for workshop num_users = {{ num_users }}"
+
+- name: Setting up module_type for workshop
+  debug:
+    msg: "Setting up module_type for workshop module_type = {{ module_type }}"
+
+- name: Give access to opentlc-mgr
+  shell: |
+         oc adm policy add-cluster-role-to-user cluster-admin {{ ocp_username }}
+
+- name: create module list
+  set_fact:
+    modules: "{{ module_type.split(';') | map('trim') | list }}"
+
+- name: Selected Modules
+  debug:
+    msg: "selected modules list: {{ modules }}"
+
+- name: delete coolstore templates from openshift namespace
+  command: oc delete -n openshift -f -
+  args:
+    stdin: "{{ lookup('file', item) }}"
+  loop:
+    - ./files/coolstore-monolith-binary-build-template.yaml
+    - ./files/coolstore-monolith-pipeline-build-template.yaml
+  ignore_errors: yes
+
+- name: deploy templates to openshift namespace
+  command: oc replace --force -n openshift -f -
+  args:
+    stdin: "{{ lookup('file', item) }}"
+  loop:
+    - ./files/dukesbank-monolith-binary-build-template.yaml
+
+- name: remove the user Projects
+  shell: >
+    oc delete project {{ item }}-inventory {{ item }}-catalog
+  with_list: "{{ users }}"
+  ignore_errors: yes
+
+- name: create transaction and account user projects
+  when: ("m1" in modules or "m2" in modules or "m3" in modules)
+  include_tasks: create_project.yaml
+  vars:
+    name: "{{ item[0] }}-{{ item[1] }}"
+    user: "{{ item[0] }}"
+  loop: "{{ users|product(['transaction', 'account'])|list }}"
+
+- name: delete guides
+  shell: oc delete -n labs-infra svc/guides-{{ item }} dc/guides-{{ item }} route/guides-{{ item }}
+  with_list: "{{ modules }}"
+  ignore_errors: yes
+
+- name: install guides
+  include_tasks: install-guides.yaml
+  vars:
+    guide: "fsi-{{ item }}"
+  loop: "{{ modules }}"
+
+- name: install username distribution
+  include_tasks: install-username-distribution.yaml
+
+# Leave this as the last task in the playbook.
+- name: workload tasks complete
+  debug:
+    msg: "Workload Tasks completed successfully."
+  when: not silent|bool
