@@ -2,365 +2,415 @@ apiVersion: template.openshift.io/v1
 kind: Template
 labels:
   template: dukesbank-monolith-binary-build
-message: The resources (build config, deploy config, service, imagestreams, etc) for
-  running the DukesBank Monolith demo has been created in your project. To deploy
-  the application go to your source directoy and build that code using mvn -Popenshift
-  package and then start the build using oc start-build dukesbank --from-file=deployments/ROOT.war.
+  xpaas: 1.2.0
+message: >-
+  The resources (build config, deploy config, service, imagestreams, etc) for
+  running the DukesBank Monolith demo has been created in your project.
+  The username/password for accessing the MySQL database "monolith" is
+  dukesbank/dukesbank123.
+  To deploy the application go to your source directoy and build that code using
+  `mvn -Popenshift package` and then start the build using
+  `oc start-build dukesbank --from-file=deployments/ROOT.ear`.
 metadata:
   annotations:
-    description: Application template DukesBank Monolith using binary build.
-    iconClass: icon-jboss
-    openshift.io/display-name: DukesBank Monolith using binary build
-    tags: eap,mysql,javaee,java,database,jboss,xpaas
-    version: 1.0.0
-  creationTimestamp: "2020-02-08T04:25:43Z"
+    openshift.io/display-name: 'DukesBank Monolith using binary build'
+    samples.operator.openshift.io/version: 4.5.4
+    template.openshift.io/long-description: >-
+      The resources (build config, deploy config, service, imagestreams, etc) for
+      running the DukesBank Monolith demo has been created in your project. To deploy
+      the application go to your source directoy and build that code using mvn -Popenshift
+      package and then start the build using `oc start-build dukesbank --from-file=deployments/ROOT.ear`.
+    template.openshift.io/support-url: 'https://access.redhat.com'
+    version: 1.2.0
+    tags: 'eap,javaee,java,jboss,database,xpass,mysql'
+    description: >-
+      DukesBank Monolith application template using binary build with a MySQL database,
+      containerized with JBoss EAP 7.
+    template.openshift.io/documentation-url: >-
+      https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/
+    iconClass: icon-eap
+    openshift.io/provider-display-name: 'FSI team Verticals BU, Red Hat, Inc.'
+  selfLink: >-
+    /apis/template.openshift.io/v1/namespaces/openshift/templates/dukesbank-monolith-binary-build
+  resourceVersion: '12937'
   name: dukesbank-monolith-binary-build
+  uid: 99769125-182a-4c7c-84c9-2fa5b723ed09
+  creationTimestamp: null
   namespace: openshift
-  resourceVersion: "42535"
-  selfLink: /apis/template.openshift.io/v1/namespaces/openshift/templates/dukesbank-monolith-binary-build
-  uid: 2fc74cea-c4fc-4f0a-a373-7a48219ba96d
+  labels:
+    samples.operator.openshift.io/managed: 'true'
 objects:
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      description: The web server's http port.
-      service.alpha.openshift.io/dependencies: '[{"name":"dukesbank-mysql","namespace":"","kind":"Service"}]'
-    labels:
-      application: dukesbank
-    name: dukesbank
-  spec:
-    ports:
-    - port: 8080
-      targetPort: 8080
-    selector:
-      deploymentConfig: dukesbank
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      description: The database server's port.
-    labels:
-      application: dukesbank
-    name: dukesbank-mysql
-  spec:
-    ports:
-    - port: 3306
-      targetPort: 3306
-    selector:
-      deploymentConfig: dukesbank-mysql
-- apiVersion: v1
-  id: dukesbank-http
-  kind: Route
-  metadata:
-    annotations:
-      description: Route for application's http service.
-    labels:
-      application: dukesbank
-    name: www
-  spec:
-    to:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        description: The web server's http port.
+        service.alpha.openshift.io/dependencies: '[{"name": "dukesbank-mysql", "kind": "Service"}]'
+      labels:
+        application: dukesbank
       name: dukesbank
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    labels:
-      application: dukesbank
-      build: dukesbank
-    name: dukesbank
-- apiVersion: v1
-  kind: BuildConfig
-  metadata:
-    labels:
-      application: dukesbank
-    name: dukesbank
-  spec:
-    output:
+    spec:
+      ports:
+        - port: 8080
+          targetPort: 8080
+      selector:
+        deploymentConfig: dukesbank
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        description: The web server's https port.
+        service.alpha.openshift.io/dependencies: '[{"name": "dukesbank-mysql", "kind": "Service"}]'
+      labels:
+        application: dukesbank
+      name: secure-dukesbank
+    spec:
+      ports:
+        - port: 8443
+          targetPort: 8443
+      selector:
+        deploymentConfig: dukesbank
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        description: The database server's port.
+      labels:
+        application: dukesbank
+      name: dukesbank-mysql
+    spec:
+      ports:
+        - port: 3306
+          targetPort: 3306
+      selector:
+        deploymentConfig: dukesbank-mysql
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        description: The JGroups ping port for clustering.
+        service.alpha.kubernetes.io/tolerate-unready-endpoints: 'true'
+      labels:
+        application: dukesbank
+      name: dukesbank-ping
+    spec:
+      clusterIP: None
+      ports:
+        - name: ping
+          port: 8888
+      publishNotReadyAddresses: true
+      selector:
+        deploymentConfig: dukesbank
+  - apiVersion: v1
+    id: dukesbank-http
+    kind: Route
+    metadata:
+      annotations:
+        description: Route for application's http service.
+      labels:
+        application: dukesbank
+      name: dukesbank
+    spec:
       to:
-        kind: ImageStreamTag
-        name: dukesbank:latest
-    source:
-      binary: {}
-      type: Binary
-    strategy:
-      sourceStrategy:
-        from:
-          kind: ImageStreamTag
-          name: jboss-eap72-openshift:1.0
-          namespace: ${IMAGE_STREAM_NAMESPACE}
-      type: Source
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    labels:
-      application: dukesbank
-    name: dukesbank
-  spec:
-    replicas: 1
-    selector:
-      deploymentConfig: dukesbank
-    strategy:
-      resources: {}
-      type: Recreate
-    template:
-      metadata:
-        labels:
-          application: dukesbank
-          deploymentConfig: dukesbank
         name: dukesbank
-      spec:
-        containers:
-        - env:
-          - name: DB_SERVICE_PREFIX_MAPPING
-            value: dukesbank-mysql=DB
-          - name: DB_JNDI
-            value: java:jboss/datasources/DukesBankDS
-          - name: DB_USERNAME
-            value: dukesbank
-          - name: DB_PASSWORD
-            value: dukesbank123
-          - name: DB_DATABASE
-            value: monolith
-          - name: TX_DATABASE_PREFIX_MAPPING
-            value: dukesbank-mysql=DB
-          - name: MQ_TOPICS
-            value: orders
-          - name: OPENSHIFT_KUBE_PING_LABELS
-            value: application=dukesbank
-          - name: OPENSHIFT_KUBE_PING_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          - name: HTTPS_KEYSTORE_DIR
-            value: /etc/eap-secret-volume
-          - name: HTTPS_KEYSTORE
-            value: keystore.jks
-          - name: HTTPS_KEYSTORE_TYPE
-            value: JKS
-          - name: HTTPS_NAME
-            value: jboss
-          - name: HTTPS_PASSWORD
-            value: mykeystorepass
-          - name: MQ_CLUSTER_PASSWORD
-            value: dukesbank123
-          - name: JGROUPS_ENCRYPT_SECRET
-            value: dukesbank-secret
-          - name: JGROUPS_ENCRYPT_KEYSTORE_DIR
-            value: /etc/jgroups-encrypt-secret-volume
-          - name: JGROUPS_ENCRYPT_KEYSTORE
-            value: jgroups.jceks
-          - name: JGROUPS_ENCRYPT_NAME
-            value: secret-key
-          - name: JGROUPS_ENCRYPT_PASSWORD
-            value: password
-          - name: JGROUPS_CLUSTER_PASSWORD
-            value: openshift123
-          - name: DEFAULT_JOB_REPOSITORY
-            value: dukesbank-mysql
-          - name: TIMER_SERVICE_DATA_STORE
-            value: dukesbank-mysql
-          image: dukesbank
-          imagePullPolicy: Always
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                - /opt/eap/bin/jboss-cli.sh
-                - -c
-                - :shutdown(timeout=60)
-          readinessProbe:
-            httpGet:
-              path: /health.jsp
-              port: 8080
-              scheme: HTTP
-            timeoutSeconds: 5
-            periodSeconds: 30
-            successThreshold: 1
-            failureThreshold: 20
-            initialDelaySeconds: 20
-          livenessProbe:
-            httpGet:
-              path: /health.jsp
-              port: 8080
-              scheme: HTTP
-            timeoutSeconds: 5
-            periodSeconds: 30
-            successThreshold: 1
-            failureThreshold: 20
-            initialDelaySeconds: 20
-          name: dukesbank
-          ports:
-          - containerPort: 8778
-            name: jolokia
-            protocol: TCP
-          - containerPort: 8080
-            name: http
-            protocol: TCP
-          - containerPort: 8443
-            name: https
-            protocol: TCP
-          - containerPort: 8888
-            name: ping
-            protocol: TCP
-          volumeMounts:
-          - mountPath: /etc/eap-secret-volume
-            name: eap-keystore-volume
-            readOnly: true
-          - mountPath: /etc/jgroups-encrypt-secret-volume
-            name: eap-jgroups-keystore-volume
-            readOnly: true
-        serviceAccountName: dukesbank-serviceaccount
-        terminationGracePeriodSeconds: 75
-        volumes:
-        - name: eap-keystore-volume
-          secret:
-            secretName: dukesbank-secret
-        - name: eap-jgroups-keystore-volume
-          secret:
-            secretName: dukesbank-secret
-    triggers:
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - dukesbank
-        from:
+  - apiVersion: v1
+    id: dukesbank-https
+    kind: Route
+    metadata:
+      annotations:
+        description: Route for application's https service.
+      labels:
+        application: dukesbank
+      name: secure-dukesbank
+    spec:
+      host: ''
+      tls:
+        termination: passthrough
+      to:
+        name: secure-dukesbank
+  - apiVersion: v1
+    kind: ImageStream
+    metadata:
+      labels:
+        application: dukesbank
+      name: dukesbank
+  - apiVersion: v1
+    kind: BuildConfig
+    metadata:
+      labels:
+        application: dukesbank
+      name: dukesbank
+    spec:
+      output:
+        to:
           kind: ImageStreamTag
           name: dukesbank:latest
-      type: ImageChange
-    - type: ConfigChange
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    labels:
-      application: dukesbank
-    name: dukesbank-mysql
-  spec:
-    replicas: 1
-    selector:
-      deploymentConfig: dukesbank-mysql
-    strategy:
-      type: Recreate
-    template:
-      metadata:
-        labels:
-          application: dukesbank
-          deploymentConfig: dukesbank-mysql
-        name: dukesbank-mysql
-      spec:
-        volumes:
-        - name: dukesbank=mysql-data
-          emptyDir: {}
-        containers:
-        - env:
-          - name: MYSQL_USER
-            value: dukesbank
-          - name: MYSQL_PASSWORD
-            value: dukesbank123
-          - name: MYSQL_DATABASE
-            value: monolith
-          - name: MYSQL_ROOT_PASSWORD
-            value: dukesbank123
-          image: mysql:5.7
-          imagePullPolicy: Always
-          livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            tcpSocket:
-              port: 3306
-            timeoutSeconds: 1
-          name: dukesbank-mysql
-          ports:
-          - containerPort: 3306
-            protocol: TCP
-          readinessProbe:
-            exec:
+      source:
+        binary: {}
+        type: Binary
+      strategy:
+        sourceStrategy:
+          forcePull: true
+          from:
+            kind: ImageStreamTag
+            name: jboss-eap72-openshift:1.2
+            namespace: '${IMAGE_STREAM_NAMESPACE}'
+          incremental: true
+        type: Source
+  - apiVersion: v1
+    kind: DeploymentConfig
+    metadata:
+      labels:
+        application: dukesbank
+      name: dukesbank
+    spec:
+      replicas: 1
+      selector:
+        deploymentConfig: dukesbank
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          labels:
+            application: dukesbank
+            deploymentConfig: dukesbank
+          name: dukesbank
+        spec:
+          containers:
+            - resources:
+                limits:
+                  memory: 1Gi
+              readinessProbe:
+                exec:
+                  command:
+                    - /bin/bash
+                    - '-c'
+                    - /opt/eap/bin/readinessProbe.sh false
+                initialDelaySeconds: 10
+              name: dukesbank
+              livenessProbe:
+                exec:
+                  command:
+                    - /bin/bash
+                    - '-c'
+                    - /opt/eap/bin/livenessProbe.sh
+                initialDelaySeconds: 60
+              env:
+                - name: DB_SERVICE_PREFIX_MAPPING
+                  value: dukesbank-mysql=DB
+                - name: DB_JNDI
+                  value: java:jboss/datasources/DukesBankDS
+                - name: DB_USERNAME
+                  value: dukesbank
+                - name: DB_PASSWORD
+                  value: dukesbank123
+                - name: DB_DATABASE
+                  value: monolith
+                - name: TX_DATABASE_PREFIX_MAPPING
+                  value: dukesbank-mysql=DB
+                - name: JGROUPS_PING_PROTOCOL
+                  value: dns.DNS_PING
+                - name: OPENSHIFT_DNS_PING_SERVICE_NAME
+                  value: dukesbank-ping
+                - name: OPENSHIFT_DNS_PING_SERVICE_PORT
+                  value: 8888
+                - name: HTTPS_KEYSTORE_DIR
+                  value: /etc/eap-secret-volume
+                - name: HTTPS_KEYSTORE
+                  value: keystore.jks
+                - name: HTTPS_KEYSTORE_TYPE
+                  value: JKS
+                - name: HTTPS_NAME
+                  value: jboss
+                - name: HTTPS_PASSWORD
+                  value: mykeystorepass
+                - name: MQ_CLUSTER_PASSWORD
+                  value: dukesbank123
+                - name: JGROUPS_ENCRYPT_SECRET
+                  value: dukesbank-secret
+                - name: JGROUPS_ENCRYPT_KEYSTORE_DIR
+                  value: /etc/jgroups-encrypt-secret-volume
+                - name: JGROUPS_ENCRYPT_KEYSTORE
+                  value: jgroups.jceks
+                - name: JGROUPS_ENCRYPT_NAME
+                  value: secret-key
+                - name: JGROUPS_ENCRYPT_PASSWORD
+                  value: password
+                - name: JGROUPS_CLUSTER_PASSWORD
+                  value: openshift123
+                - name: DEFAULT_JOB_REPOSITORY
+                  value: dukesbank-mysql
+                - name: TIMER_SERVICE_DATA_STORE
+                  value: dukesbank-mysql
+              ports:
+                - containerPort: 8778
+                  name: jolokia
+                  protocol: TCP
+                - containerPort: 8080
+                  name: http
+                  protocol: TCP
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
+                - containerPort: 8888
+                  name: ping
+                  protocol: TCP
+              imagePullPolicy: Always
+              volumeMounts:
+                - mountPath: /etc/eap-secret-volume
+                  name: eap-keystore-volume
+                  readOnly: true
+                - mountPath: /etc/jgroups-encrypt-secret-volume
+                  name: eap-jgroups-keystore-volume
+                  readOnly: true
+              image: dukesbank
+          terminationGracePeriodSeconds: 75
+          volumes:
+            - name: eap-keystore-volume
+              secret:
+                secretName: dukesbank-eap-secret
+            - name: eap-jgroups-keystore-volume
+              secret:
+                secretName: dukesbank-secret
+      triggers:
+        - imageChangeParams:
+            automatic: true
+            containerNames:
+              - dukesbank
+            from:
+              kind: ImageStreamTag
+              name: dukesbank:latest
+          type: ImageChange
+        - type: ConfigChange
+  - apiVersion: v1
+    kind: DeploymentConfig
+    metadata:
+      labels:
+        application: dukesbank
+      name: dukesbank-mysql
+    spec:
+      replicas: 1
+      selector:
+        deploymentConfig: dukesbank-mysql
+      strategy:
+        type: Recreate
+        recreateParams:
+          post:
+            failurePolicy: Abort
+            execNewPod:
               command:
-              - /bin/sh
-              - -i
+              - /bin/bash
               - -c
-              - MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u $MYSQL_USER -D $MYSQL_DATABASE
-                -e 'SELECT 1'
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          resources:
-            limits:
-              memory: 512Mi
-          securityContext:
-            capabilities: {}
-            privileged: false
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-          volumeMounts:
-          - name: dukesbank-mysql-data
-            mountPath: /var/lib/mysql/data
-        terminationGracePeriodSeconds: 60
-        dnsPolicy: ClusterFirst
-        securityContext: {}
-        schedulerName: default-scheduler
-    triggers:
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - dukesbank-mysql
-        from:
-          kind: ImageStreamTag
-          name: mysql:5.7
-          namespace: ${IMAGE_STREAM_NAMESPACE}
-      type: ImageChange
-    - type: ConfigChange
-- apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    name: dukesbank-serviceaccount
-  secrets:
-  - name: dukesbank-secret
-- apiVersion: v1
-  groupNames: null
-  kind: RoleBinding
-  metadata:
-    name: dukesbank-serviceaccount_view
-  roleRef:
-    name: view
-  subjects:
-  - kind: ServiceAccount
-    name: dukesbank-serviceaccount
-- apiVersion: v1
-  groupNames:
-  - system:serviceaccounts:${USER_ID}-dukesbank-prod
-  kind: RoleBinding
-  metadata:
-    name: ci_admin
-  roleRef:
-    name: admin
-  subjects:
-  - kind: Group
-    name: system:serviceaccounts:${USER_ID}-dukesbank-prod
-- apiVersion: v1
-  data:
-    jgroups.jceks: zs7OzgAAAAIAAAABAAAAAwAKc2VjcmV0LWtleQAAAVDQhuHmrO0ABXNyADNjb20uc3VuLmNyeXB0by5wcm92aWRlci5TZWFsZWRPYmplY3RGb3JLZXlQcm90ZWN0b3LNV8pZ5zC7UwIAAHhyABlqYXZheC5jcnlwdG8uU2VhbGVkT2JqZWN0PjY9psO3VHACAARbAA1lbmNvZGVkUGFyYW1zdAACW0JbABBlbmNyeXB0ZWRDb250ZW50cQB+AAJMAAlwYXJhbXNBbGd0ABJMamF2YS9sYW5nL1N0cmluZztMAAdzZWFsQWxncQB+AAN4cHVyAAJbQqzzF/gGCFTgAgAAeHAAAAAPMA0ECHcwLGK6EDyLAgEUdXEAfgAFAAAAmCu9wRKf1aYYUOEWe406ncPtIdm3147G7MJyWUu2kJVY15a2QxeZi9w5J3AF6T64CvylUuQjpcC4DWXwVn9BefntkBR8CzTiH7VxEqVOQ/OkFS29Inoq8t7/NBaTgTdmMkb4ETV1gIsy/+W6kk7QTqxItCkdKKGFE90Be/7yL3tG16TCy/ABKl7CO6PHa44CqK2PUE1oaJ+WdAAWUEJFV2l0aE1ENUFuZFRyaXBsZURFU3QAFlBCRVdpdGhNRDVBbmRUcmlwbGVERVMN658veJP01V2j9y8bQCYIzViutw==
-    keystore.jks: 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
-  kind: Secret
-  metadata:
-    annotations:
-      description: Default HTTPS keystore (keystore.jks) with name 'jboss' and password
-        'mykeystorepass' and JGoups keystore (jgroups.jceks) with name 'secret-key'
-        and password 'password'
-    name: dukesbank-secret
+              - hostname && sleep 10 && echo $QUERY | /opt/rh/rh-mysql57/root/usr/bin/mysql -h $EAP_APP_MYSQL_SERVICE_HOST -u $MYSQL_USER -D $MYSQL_DATABASE -p$MYSQL_PASSWORD -P $EAP_APP_MYSQL_SERVICE_PORT
+              containerName: ${APPLICATION_NAME}-mysql
+              env:
+              - name: QUERY
+                value: CREATE TABLE IF NOT EXISTS ACCOUNT(ACCOUNT_ID BIGINT(20) NOT NULL,TYPE VARCHAR(255),DESCRIPTION VARCHAR(255),BALANCE DECIMAL(19,2),CREDIT_LINE DECIMAL(19,2),BEGIN_BALANCE DECIMAL(19,2),BEGIN_BALANCE_TIME_STAMP DATETIME,CONSTRAINT PK_ACCOUNT PRIMARY KEY(ACCOUNT_ID));CREATE TABLE IF NOT EXISTS CUSTOMER(CUSTOMER_ID BIGINT(20) NOT NULL,LAST_NAME VARCHAR(255),FIRST_NAME VARCHAR(255),MIDDLE_INITIAL VARCHAR(255),STREET VARCHAR(255),CITY VARCHAR(255),STATE VARCHAR(255),ZIP VARCHAR(255),PHONE VARCHAR(255),EMAIL VARCHAR(255),CONSTRAINT PK_CUSTOMER PRIMARY KEY(CUSTOMER_ID));CREATE TABLE IF NOT EXISTS TX(TX_ID BIGINT(20) NOT NULL,ACCOUNT_ID BIGINT(20),TIME_STAMP DATETIME,AMOUNT DECIMAL(19,2),BALANCE DECIMAL(19,2),DESCRIPTION VARCHAR(255),CONSTRAINT PK_TX PRIMARY KEY(TX_ID));CREATE TABLE IF NOT EXISTS CUSTOMER_ACCOUNT_XREF(CUSTOMER_ID BIGINT(20),ACCOUNT_ID BIGINT(20));INSERT INTO ACCOUNT (ACCOUNT_ID, TYPE, DESCRIPTION, BALANCE, CREDIT_LINE, BEGIN_BALANCE, BEGIN_BALANCE_TIME_STAMP) VALUES('5005','Money Market','Hi Balance',3300.00,0.00,3500.00,'2003-07-28 23:03:20.000000000');INSERT INTO ACCOUNT (ACCOUNT_ID, TYPE, DESCRIPTION, BALANCE, CREDIT_LINE, BEGIN_BALANCE, BEGIN_BALANCE_TIME_STAMP) VALUES('5006','Checking','Checking',2458.32,0.00,66.54,'2003-07-21 03:12:00.000000000');INSERT INTO ACCOUNT (ACCOUNT_ID, TYPE, DESCRIPTION, BALANCE, CREDIT_LINE, BEGIN_BALANCE, BEGIN_BALANCE_TIME_STAMP) VALUES('5007','Credit','Visa',220.03,5000.00,166.08,'2003-07-23 10:13:54.000000000');INSERT INTO ACCOUNT (ACCOUNT_ID, TYPE, DESCRIPTION, BALANCE, CREDIT_LINE, BEGIN_BALANCE, BEGIN_BALANCE_TIME_STAMP) VALUES('5008','Savings','Super Interest Account',59601.35,0.00,5433.89,'2003-07-15 12:55:33.000000000');INSERT INTO CUSTOMER (CUSTOMER_ID, LAST_NAME, FIRST_NAME, MIDDLE_INITIAL, STREET, CITY, STATE, ZIP, PHONE, EMAIL) VALUES('200','Jones','Richard','K','88 Poplar Ave.','Cupertino','CA','95014','408-123-4567','rhill@j2ee.com');INSERT INTO CUSTOMER (CUSTOMER_ID, LAST_NAME, FIRST_NAME, MIDDLE_INITIAL, STREET, CITY, STATE, ZIP, PHONE, EMAIL) VALUES('201','Jones','Mary','R','88 Poplar Ave.','Cupertino','CA','95014','408-123-4567','mhill@j2ee.com');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('1','5005','2003-09-01 13:00:30.000000000',200.00,4200.00,'Refund');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('10','5008','2003-09-10 13:00:30.000000000',1000.00,55601.35,'Deposit');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('11','5007','2003-09-11 13:00:30.000000000',585.00,970.08,'Airplane Tickets');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('12','5006','2003-09-12 13:00:30.000000000',-675.00,2210.00,'Mortgage Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('13','5005','2003-09-13 13:00:30.000000000',-100.00,3900.00,'ATM Withdrawal');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('14','5006','2003-09-14 13:00:30.000000000',-385.08,1824.92,'Visa Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('15','5007','2003-09-15 13:00:30.000000000',-385.08,585.00,'Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('17','5007','2003-09-17 13:00:30.000000000',26.95,611.95,'Movies');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('18','5006','2003-09-18 13:00:30.000000000',-31.00,1793.92,'Groceries');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('19','5005','2003-09-19 13:00:30.000000000',-150.00,3750.00,'ATM Withdrawal');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('20','5006','2003-09-20 13:00:30.000000000',2000.00,3173.92,'Paycheck Deposit');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('21','5007','2003-09-21 13:00:30.000000000',124.00,735.95,'Furnishings');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('23','5007','2003-09-23 13:00:30.000000000',33.12,769.07,'Hardware');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('24','5006','2003-09-24 13:00:30.000000000',-175.33,2998.59,'Utility Bill');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('25','5006','2003-09-25 13:00:30.000000000',-123.00,2875.59,'Groceries');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('26','5006','2003-09-26 13:00:30.000000000',-675.00,2200.59,'Mortgage Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('27','5007','2003-09-27 13:00:30.000000000',24.72,793.79,'Cafe');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('28','5008','2003-09-28 13:00:30.000000000',1000.00,56601.35,'Deposit');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('29','5007','2003-09-29 13:00:30.000000000',35.00,828.79,'Hair Salon');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('3','5008','2003-09-03 13:01:30.000000000',-1000.00,54601.35,'Transfer Out');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('30','5006','2003-09-30 13:00:30.000000000',-20.00,2180.59,'Gasoline');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('31','5005','2003-10-01 12:55:33.000000000',-100.00,3650.00,'ATM Withdrawal');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('32','5006','2003-10-02 12:55:33.000000000',-56.87,2123.72,'Phone Bill');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('33','5007','2003-10-03 12:55:33.000000000',67.99,896.78,'Acme Shoes');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('35','5007','2003-10-05 12:55:33.000000000',24.00,920.78,'Movies');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('36','5006','2003-10-06 12:55:33.000000000',2000.00,4123.72,'Paycheck Deposit');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('38','5006','2003-10-08 12:55:33.000000000',-100.00,4023.72,'Groceries');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('39','5007','2003-10-09 12:55:33.000000000',26.95,947.73,'Pizza');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('4','5006','2003-09-03 13:02:30.000000000',1000.00,1085.00,'Transfer In');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('41','5007','2003-10-11 12:55:33.000000000',125.00,1072.73,'Dentist');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('42','5006','2003-10-12 12:55:33.000000000',-675.00,3348.72,'Mortgage Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('43','5005','2003-10-13 12:55:33.000000000',-150.00,3500.00,'ATM Withdrawal');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('44','5006','2003-10-14 12:55:33.000000000',-947.73,2400.99,'Visa Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('45','5007','2003-10-15 12:55:33.000000000',-947.73,125.00,'Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('47','5007','2003-10-17 12:55:33.000000000',49.90,100.85,'Bookstore');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('48','5006','2003-10-18 12:55:33.000000000',-100.00,2300.99,'Groceries');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('5','5007','2003-09-05 13:03:30.000000000',33.00,199.08,'Clothing');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('50','5006','2003-10-20 12:55:33.000000000',2000.00,4300.99,'Paycheck Deposit');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('51','5007','2003-10-21 12:55:33.000000000',80.32,181.17,'Restaurant');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('53','5007','2003-10-23 12:55:33.000000000',11.78,192.95,'Electronics');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('54','5006','2003-10-24 12:55:33.000000000',-150.45,4150.54,'Utility Bill');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('55','5005','2003-10-25 12:55:33.000000000',-100.00,3400.00,'ATM Withdrawal');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('56','5006','2003-10-26 12:55:33.000000000',-675.00,3475.54,'Mortgage Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('57','5007','2003-10-27 12:55:33.000000000',24.00,216.95,'Ice Skating');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('58','5006','2003-10-28 12:55:33.000000000',-1000.00,2475.54,'Transfer Out');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('59','5008','2003-10-28 12:55:33.000000000',1000.00,57601.35,'Transfer In');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('6','5006','2003-09-06 13:04:30.000000000',2000.00,3085.00,'Paycheck Deposit');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('60','5006','2003-11-02 12:55:33.000000000',-99.22,3376.32,'Phone Bill');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('61','5007','2003-11-03 12:55:33.000000000',29.97,246.92,'Toy Store');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('62','5006','2003-11-04 12:55:33.000000000',-2000.00,376.32,'Transfer Out');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('63','5008','2003-11-05 12:55:33.000000000',2000.00,59601.35,'Transfer In');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('64','5006','2003-11-06 12:55:33.000000000',2000.00,2376.32,'Paycheck Deposit');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('65','5007','2003-11-07 12:55:33.000000000',14.69,261.61,'Cafe');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('66','5006','2003-11-08 12:55:33.000000000',-108.99,2267.33,'Groceries');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('67','5006','2003-11-09 12:55:33.000000000',-30.12,2237.21,'Gasoline');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('69','5007','2003-11-11 12:55:33.000000000',125.00,386.61,'Dentist');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('7','5005','2003-09-07 13:05:30.000000000',-200.00,4000.00,'ATM Withdrawal');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('70','5006','2003-11-12 12:55:33.000000000',-675.00,1562.21,'Mortgage Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('72','5006','2003-11-13 12:55:33.000000000',-261.61,1300.60,'Visa Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('73','5007','2003-11-14 12:55:33.000000000',-261.61,125.00,'Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('75','5007','2003-11-15 12:55:33.000000000',24.00,149.00,'Drug Store');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('76','5006','2003-11-16 12:55:33.000000000',-67.98,1232.62,'Groceries');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('78','5006','2003-11-17 12:55:33.000000000',2000.00,3232.62,'Paycheck Deposit');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('79','5007','2003-11-18 12:55:33.000000000',32.95,181.95,'CDs');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('8','5006','2003-09-08 13:06:30.000000000',-200.00,2885.00,'Car Insurance');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('81','5007','2003-11-20 12:55:33.000000000',14.10,196.05,'Sports Store');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('82','5006','2003-11-21 12:55:33.000000000',-99.30,3133.32,'Utility Bill');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('84','5006','2003-11-21 12:55:33.000000000',-675.00,2458.32,'Mortgage Payment');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('85','5007','2003-11-22 12:55:33.000000000',23.98,220.03,'Garden Supply');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('86','5005','2003-11-23 12:55:33.000000000',-100.00,3300.00,'ATM Withdrawal');INSERT INTO TX (TX_ID, ACCOUNT_ID, TIME_STAMP, AMOUNT, BALANCE, DESCRIPTION) VALUES('9','5007','2003-09-09 13:07:30.000000000',186.00,385.08,'Car Repair');INSERT INTO CUSTOMER_ACCOUNT_XREF (CUSTOMER_ID, ACCOUNT_ID) VALUES('200','5005');INSERT INTO CUSTOMER_ACCOUNT_XREF (CUSTOMER_ID, ACCOUNT_ID) VALUES('201','5005');INSERT INTO CUSTOMER_ACCOUNT_XREF (CUSTOMER_ID, ACCOUNT_ID) VALUES('200','5006');INSERT INTO CUSTOMER_ACCOUNT_XREF (CUSTOMER_ID, ACCOUNT_ID) VALUES('200','5007');INSERT INTO CUSTOMER_ACCOUNT_XREF (CUSTOMER_ID, ACCOUNT_ID) VALUES('201','5006');INSERT INTO CUSTOMER_ACCOUNT_XREF (CUSTOMER_ID, ACCOUNT_ID) VALUES('201','5007');INSERT INTO CUSTOMER_ACCOUNT_XREF (CUSTOMER_ID, ACCOUNT_ID) VALUES('200','5008');INSERT INTO CUSTOMER_ACCOUNT_XREF (CUSTOMER_ID, ACCOUNT_ID) VALUES('201','5008');
+      template:
+        metadata:
+          labels:
+            application: dukesbank
+            deploymentConfig: dukesbank-mysql
+          name: dukesbank-mysql
+        spec:
+          containers:
+            - env:
+                - name: MYSQL_USER
+                  value: dukesbank
+                - name: MYSQL_PASSWORD
+                  value: dukesbank123
+                - name: MYSQL_DATABASE
+                  value: monolith
+              image: mysql
+              imagePullPolicy: Always
+              livenessProbe:
+                initialDelaySeconds: 30
+                tcpSocket:
+                  port: 3306
+                timeoutSeconds: 1
+              name: dukesbank-mysql
+              ports:
+                - containerPort: 3306
+                  protocol: TCP
+              readinessProbe:
+                exec:
+                  command:
+                    - /bin/sh
+                    - '-i'
+                    - '-c'
+                    - >-
+                      MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u
+                      $MYSQL_USER -D $MYSQL_DATABASE -e 'SELECT 1'
+                initialDelaySeconds: 5
+                timeoutSeconds: 1
+              volumeMounts:
+                - mountPath: /var/lib/mysql/data
+                  name: dukesbank-data
+          terminationGracePeriodSeconds: 60
+          volumes:
+            - emptyDir:
+                medium: ''
+              name: dukesbank-data
+      triggers:
+        - imageChangeParams:
+            automatic: true
+            containerNames:
+              - dukesbank-mysql
+            from:
+              kind: ImageStreamTag
+              name: mysql:5.7
+              namespace: '${IMAGE_STREAM_NAMESPACE}'
+          type: ImageChange
+        - type: ConfigChange
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: dukesbank-serviceaccount
+    secrets:
+    - name: dukesbank-secret
+  - apiVersion: v1
+    groupNames: null
+    kind: RoleBinding
+    metadata:
+      name: dukesbank-serviceaccount_view
+    roleRef:
+      name: view
+    subjects:
+    - kind: ServiceAccount
+      name: dukesbank-serviceaccount
+  - apiVersion: v1
+    groupNames:
+    - system:serviceaccounts:${USER_ID}-dukesbank-prod
+    kind: RoleBinding
+    metadata:
+      name: ci_admin
+    roleRef:
+      name: admin
+    subjects:
+    - kind: Group
+      name: system:serviceaccounts:${USER_ID}-dukesbank-prod
+  - apiVersion: v1
+    data:
+      jgroups.jceks: zs7OzgAAAAIAAAABAAAAAwAKc2VjcmV0LWtleQAAAVDQhuHmrO0ABXNyADNjb20uc3VuLmNyeXB0by5wcm92aWRlci5TZWFsZWRPYmplY3RGb3JLZXlQcm90ZWN0b3LNV8pZ5zC7UwIAAHhyABlqYXZheC5jcnlwdG8uU2VhbGVkT2JqZWN0PjY9psO3VHACAARbAA1lbmNvZGVkUGFyYW1zdAACW0JbABBlbmNyeXB0ZWRDb250ZW50cQB+AAJMAAlwYXJhbXNBbGd0ABJMamF2YS9sYW5nL1N0cmluZztMAAdzZWFsQWxncQB+AAN4cHVyAAJbQqzzF/gGCFTgAgAAeHAAAAAPMA0ECHcwLGK6EDyLAgEUdXEAfgAFAAAAmCu9wRKf1aYYUOEWe406ncPtIdm3147G7MJyWUu2kJVY15a2QxeZi9w5J3AF6T64CvylUuQjpcC4DWXwVn9BefntkBR8CzTiH7VxEqVOQ/OkFS29Inoq8t7/NBaTgTdmMkb4ETV1gIsy/+W6kk7QTqxItCkdKKGFE90Be/7yL3tG16TCy/ABKl7CO6PHa44CqK2PUE1oaJ+WdAAWUEJFV2l0aE1ENUFuZFRyaXBsZURFU3QAFlBCRVdpdGhNRDVBbmRUcmlwbGVERVMN658veJP01V2j9y8bQCYIzViutw==
+      keystore.jks: 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
+    kind: Secret
+    metadata:
+      annotations:
+        description: Default HTTPS keystore (keystore.jks) with name 'jboss' and password
+          'mykeystorepass' and JGoups keystore (jgroups.jceks) with name 'secret-key'
+          and password 'password'
+      name: dukesbank-secret
 parameters:
-- description: User ID for Dev/Prod namespaces
-  displayName: User ID
-  required: true
-  name: USER_ID
-- description: Namespace in which the ImageStreams for Red Hat Middleware images are
-    installed. These ImageStreams are normally installed in the openshift namespace.
-    You should only need to modify this if you've installed the ImageStreams in a
-    different namespace/project.
-  displayName: ImageStream Namespace
-  name: IMAGE_STREAM_NAMESPACE
-  required: true
-  value: openshift
+  - description: User ID for Dev/Prod namespaces
+    displayName: User ID
+    required: true
+    name: USER_ID
+  - name: IMAGE_STREAM_NAMESPACE
+    displayName: ImageStream Namespace
+    description: >-
+      Namespace in which the ImageStreams for Red Hat Middleware images are
+      installed. These ImageStreams are normally installed in the openshift
+      namespace. You should only need to modify this if you've installed the
+      ImageStreams in a different namespace/project.
+    value: openshift
+    required: true
