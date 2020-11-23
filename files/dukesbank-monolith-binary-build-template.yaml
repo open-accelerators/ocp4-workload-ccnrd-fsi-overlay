@@ -220,7 +220,7 @@ objects:
                 - name: JGROUPS_CLUSTER_PASSWORD
                   value: 'openshift123'
                 - name: AUTO_DEPLOY_EXPLODED
-                  value: '${AUTO_DEPLOY_EXPLODED}'
+                  value: 'false'
               ports:
                 - containerPort: 8778
                   name: jolokia
@@ -454,9 +454,3 @@ parameters:
       ImageStreams in a different namespace/project.
     value: openshift
     required: true
-  - name: AUTO_DEPLOY_EXPLODED
-    displayName: Deploy Exploded Archives
-    description: >-
-      Controls whether exploded deployment content should be automatically
-      deployed
-    value: 'false'
