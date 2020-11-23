@@ -5,6 +5,7 @@
 
 - name: delete existing get-a-username app and route
   shell: oc delete -n labs-infra svc/get-a-username dc/get-a-username
+  ignore_errors: yes
 
 - name: construct url argument for username distribution
   set_fact:
