@@ -236,9 +236,6 @@ objects:
                   protocol: TCP
               imagePullPolicy: Always
               volumeMounts:
-                - mountPath: /etc/eap-environment
-                  name: configuration
-                  readOnly: true
                 - mountPath: /etc/eap-secret-volume
                   name: eap-keystore-volume
                   readOnly: true
@@ -248,9 +245,6 @@ objects:
               image: 'dukesbank'
           terminationGracePeriodSeconds: 75
           volumes:
-            - name: configuration
-              secret:
-                secretName: 'dukesbank-app-config'
             - name: eap-keystore-volume
               secret:
                 secretName: 'dukesbank-secret'
