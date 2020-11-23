@@ -193,8 +193,6 @@ objects:
                   value: 'dukesbank-ping'
                 - name: OPENSHIFT_DNS_PING_SERVICE_PORT
                   value: '8888'
-                - name: ENV_FILES
-                  value: /etc/eap-environment/*
                 - name: HTTPS_KEYSTORE_DIR
                   value: /etc/eap-secret-volume
                 - name: HTTPS_KEYSTORE
